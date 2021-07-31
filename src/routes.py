@@ -2,56 +2,63 @@ import io
 import uuid
 import json
 from typing import Iterable, Tuple, List
+import functools
+import dataclasses
+
 from aiohttp import web
-from marshmallow import Schema, ValidationError, fields
+from marshmallow import ValidationError
 
 from .application import config
-from .runner import run_tests
+from .schemas import *
+from .runner import run_tests, RunnerReport
+from .tests import TestSet, save_testset, get_testset
 from .runner_python3 import Python3Environment, Python3Runner, Python3Compiler 
+
 
 routes = web.RouteTableDef()
 
-# TODO: move part of test logic to a single file
-@routes.post("/upload_testset")
-async def upload_testset(request):
-    data = await request.post()
-    if "testset" not in data.keys():
-        raise RuntimeError("`testset file not in the request")
-    testsets_dir = config.get().TESTSETS_DIR
-    testset_id = str(uuid.uuid1())
-    testset_path = testsets_dir / testset_id
-    with testset_path.open("wb") as f:
-        f.write(data["testset"].file.read())
-    return web.json_response({"testset_id": testset_id})
+
+def json_api(req_schema, resp_schema):
+    def wrapper(method): 
+        @functools.wraps(method)
+        async def decorated(request, *args, **kwargs):
+            try:
+                request_obj = await request.json()
+            except Exception as err:
+                return web.Response(
+                    status=500, 
+                    text=f"Couldn't parse the request: {err.messages}")
+
+            if errs := req_schema.validate(request_obj): 
+                return web.Response(
+                    status=500,
+                    text=f"Bad request: {errs}")
+
+            result = await method(request_obj, *args, **kwargs)
+            return web.json_response(resp_schema.dump(result))
+
+        return decorated
+
+    return wrapper
 
 
-Test = Tuple[List[str], List[str]]
-TestSet = Iterable[Test]
+@routes.post("/testset")
+@json_api(TestSetSchema(exclude=("id",)), TestSetSchema())
+async def testset(request):
+    ts = TestSet(**request)
+    save_testset(ts)
+    return ts
 
 
-def load_testset(testset_id: str) -> TestSet:
-    testset_path = config.get().TESTSETS_DIR / testset_id
-    with testset_path.open("r") as f:
-        testset_obj = json.load(f)
-    return ((t["input"], t["output"]) for t in testset_obj)
-
-
-@routes.post("/submit/{testset_id}")
+@routes.post("/submit")
+@json_api(SubmitReqSchema, SubmitRespSchema)
 async def submit(request):
-    testset_id = request.match_info["testset_id"]
-    data = await request.post()
     try:
-        source_file = data["source"]
-    except KeyError:
-        return web.Response(status=500, text="You have to provide `source` file")
-    try:
-        testset = load_testset(testset_id)
+        testset = get_testset(request["testset_id"])
     except FileNotFoundError:
-        raise web.Response(status=500, text="Invalid testset id")
-    source_name = source_file.filename
-    source_stream = io.BytesIO(source_file.file.read())
+        return web.Response(status=500, text="Invalid testset id")
+    source_stream = io.BytesIO(request["source"].encode())
     runners_dir = config.get().RUNNERS_DIR
-    runner_report = await run_tests(runners_dir, source_name, source_stream, 
+    return await run_tests(runners_dir, "source_file", source_stream, 
                                          Python3Environment, Python3Compiler(), 
                                          Python3Runner(), testset)
-    return web.Response(text=str(runner_report))

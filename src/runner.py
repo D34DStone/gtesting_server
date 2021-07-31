@@ -30,6 +30,7 @@ class TestResult:
 class RunnerReport:
 
     compilation_succ: bool
+    message: str
     test_results: List[TestResult]
 
 
@@ -70,7 +71,7 @@ async def run_tests(
     with environ(runner_dir, source_name, source_stream) as (sub_id, source_path):
         compilation_result = await compiler.compile(source_path)
         if not compilation_result.succ:
-            return RunnerReport(False, [])
+            return RunnerReport(False, compilation_result.error_msg, [])
         test_results = [await runner.run_test(compilation_result.exec_path, test) 
                         for test in testset]
-        return RunnerReport(False, test_results)
+        return RunnerReport(False, None, test_results)

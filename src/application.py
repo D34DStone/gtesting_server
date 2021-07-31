@@ -9,5 +9,6 @@ class Application:
         self.aiohttp_app = web.Application()
         self.config = config
 
-    async def make_context(self, _):
+    async def make_context(self, aiohttp_app):
         config.set(self.config)
+        aiohttp_app["config"] = self.config
