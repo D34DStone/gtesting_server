@@ -13,6 +13,7 @@ from marshmallow import ValidationError
 
 from src import main
 from src.schemas import *
+from src.runner import TestResult
 
 
 class IntgrationTest(unittest.IsolatedAsyncioTestCase):
@@ -68,25 +69,38 @@ class IntgrationTest(unittest.IsolatedAsyncioTestCase):
         except ValidationError as err:
             self.fail(f"Failed to load the response: {err}")
 
-    async def __test_submit(self):
+    async def test_submit(self):
         source = """
 a, b, *_ = (int(n) for n in input().split())
 print(a + b)
         """
-        testset = [
-            {
-                "input": ["1", "2"],
-                "output": ["3"]
-            },
-            {
-                "input": ["5", "6"],
-                "output": ["11"]
-            },
-            {
-                "input": ["7", "8"],
-                "output": ["16"]
-            },
+        testset = {
+            "tests": [
+                {
+                    "input": ["1", "2"],
+                    "output": ["3"]
+                },
+                {
+                    "input": ["5", "6"],
+                    "output": ["11"]
+                },
+                {
+                    "input": ["7", "8"],
+                    "output": ["16"]
+                },
+                ]}
+        expected_verdicts = [
+            TestResult.Verdict.OK,
+            TestResult.Verdict.OK,
+            TestResult.Verdict.WA,
         ]
         _, upload_content = await self.__upload_testset(testset)
-        testset_id = UploadTestsetRespSchema().load(json.loads(upload_content))["testset_id"]
-        _, submit_content = await self.__submit(testset_id, source)
+        ts = TestSetSchema().load(json.loads(upload_content))
+        status, submit_content = await self.__submit(ts.id, source)
+        self.assertEqual(status, 200)
+        try:
+            report = SubmitRespSchema().load(json.loads(submit_content))
+        except ValidationError as err:
+            self.fail(f"Bad response: {err.messages}")
+        verdicts = [t.verdict for t in report.test_results]
+        self.assertEqual(verdicts, expected_verdicts)

@@ -1,8 +1,10 @@
 import uuid
 import json
 from typing import List
-
 from dataclasses import dataclass, asdict, field
+
+from marshmallow_dataclass import class_schema
+
 from .application import config
 
 @dataclass
@@ -25,16 +27,18 @@ def save_testset(ts: TestSet):
         testsets_dir.mkdir(parent=True)
     testset_path = testsets_dir / ts.id
     with testset_path.open("w") as f:
-        f.write(json.dumps(asdict(ts)))
+        ts_obj = class_schema(TestSet)().dump(ts)
+        json.dump(ts_obj, f)
 
 
-class TestDoesNotExist(Exception):
+class TestSetNotFound(Exception):
     pass
 
 
 def get_testset(id: str) -> TestSet:
     testset_path = config.get().TESTSETS_DIR / id
     if not testset_path.exists():
-        raise TestDoesNotExist
+        raise TestSetNotFound
     with testset_path.open("r") as f:
-        return TestSet(**json.load(f))
+        ts_obj = json.load(f)
+        return class_schema(TestSet)().load(ts_obj)

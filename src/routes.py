@@ -11,7 +11,7 @@ from marshmallow import ValidationError
 from .application import config
 from .schemas import *
 from .runner import run_tests, RunnerReport
-from .tests import TestSet, save_testset, get_testset
+from .tests import TestSet, save_testset, get_testset, TestSetNotFound
 from .runner_python3 import Python3Environment, Python3Runner, Python3Compiler 
 
 
@@ -51,14 +51,13 @@ async def testset(request):
 
 
 @routes.post("/submit")
-@json_api(SubmitReqSchema, SubmitRespSchema)
+@json_api(SubmitReqSchema(), SubmitRespSchema())
 async def submit(request):
     try:
         testset = get_testset(request["testset_id"])
-    except FileNotFoundError:
-        return web.Response(status=500, text="Invalid testset id")
+    except TestSetNotFound:
+        return web.Response(status=404, text="Test set not found.")
+
     source_stream = io.BytesIO(request["source"].encode())
-    runners_dir = config.get().RUNNERS_DIR
-    return await run_tests(runners_dir, "source_file", source_stream, 
-                                         Python3Environment, Python3Compiler(), 
-                                         Python3Runner(), testset)
+    return await run_tests(source_stream, Python3Environment, 
+        Python3Compiler(), Python3Runner(), testset)

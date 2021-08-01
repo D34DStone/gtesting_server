@@ -2,10 +2,17 @@ from pathlib import Path
 
 class DefaultConfig:
 
-    ROOT_DIR = Path(__file__).parent.resolve()
-    TESTSETS_DIR = ROOT_DIR / "testsets"
-    RUNNERS_DIR = ROOT_DIR / "runners"
+    ROOT_DIR        = Path(__file__).parent.resolve()
+    VAR_DIR         = ROOT_DIR / "var"
+    TESTSETS_DIR    = VAR_DIR / "default" / "testsets"
+    RUNNERS_DIR     = VAR_DIR / "default" / "runners"
     
 
-class ConfigDevelopment(DefaultConfig):
+class TestingConfig(DefaultConfig):
+    
+    TESTSETS_DIR    = DefaultConfig.VAR_DIR / "testing" / "testsets"
+    RUNNERS_DIR     = DefaultConfig.VAR_DIR / "testing" / "runners"
+
+
+class DevelopmentConfig(DefaultConfig):
     pass
