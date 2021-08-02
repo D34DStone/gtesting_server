@@ -8,6 +8,9 @@ from redis import Redis
 from aiohttp import web
 
 
+__all__ = ("config_ctx", "redis_ctx", "app_context", "create_app")
+
+
 config_ctx = ContextVar("gtesting:config")
 redis_ctx = ContextVar("gtesting:redis")
 
@@ -30,10 +33,10 @@ def load_module(path: str):
 
 
 def get_config(argv):
-    """ Loads a configuration class. Priprity of inferring a config path:
-    1. From command line arguments: $ ./run --config config:ProductionConfig.
-    2. From the encironment: APP_CONFIG.
-    3. Use the default one: config:DevelopmentConfig.
+    """ Loads a configuration class. Priority of the inferring a config:
+    1. From CLI parameter `--config`
+    2. From the encironment variable `APP_CONFIG`
+    3. Use the default one `config:DevelopmentConfig`
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=False)
