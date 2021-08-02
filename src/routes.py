@@ -8,7 +8,6 @@ import dataclasses
 from aiohttp import web
 from marshmallow import ValidationError
 
-from .application import config
 from .schemas import *
 from .runner import run_tests, RunnerReport
 from .tests import TestSet, save_testset, get_testset, TestSetNotFound

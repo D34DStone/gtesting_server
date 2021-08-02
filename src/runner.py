@@ -4,7 +4,7 @@ import dataclasses
 from typing import List, Union, BinaryIO
 from pathlib import Path
 
-from .application import config
+from .application import config_ctx
 from .tests import TestSet, Test
 
 @dataclasses.dataclass
@@ -72,7 +72,7 @@ async def run_tests(
     compiler: Compiler, 
     runner: Runner,
     ts: TestSet) -> RunnerReport:
-    with environ(config.get().RUNNERS_DIR, source_stream) as (sub_id, source_path):
+    with environ(config_ctx.get().RUNNERS_DIR, source_stream) as (sub_id, source_path):
         compilation_result = await compiler.compile(source_path)
         if not compilation_result.succ:
             return RunnerReport(False, compilation_result.error_msg, [])

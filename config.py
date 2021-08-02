@@ -12,6 +12,8 @@ class TestingConfig(DefaultConfig):
     
     TESTSETS_DIR    = DefaultConfig.VAR_DIR / "testing" / "testsets"
     RUNNERS_DIR     = DefaultConfig.VAR_DIR / "testing" / "runners"
+    REDIS_HOST      = "localhost"
+    REDIS_PORT      = 6379
 
 
 class DevelopmentConfig(DefaultConfig):

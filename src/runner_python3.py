@@ -3,7 +3,7 @@ import shutil
 import asyncio
 from pathlib import Path
 
-from .application import config
+from .application import config_ctx
 
 from .tests import Test
 from .runner import Environment, CompileResult, TestResult, Compiler, Runner
@@ -15,7 +15,7 @@ class Python3Environment(Environment):
 
     def __enter__(self):
         sub_id = str(uuid.uuid1())
-        self.source_dir = config.get().RUNNERS_DIR / sub_id
+        self.source_dir = config_ctx.get().RUNNERS_DIR / sub_id
         self.source_dir.mkdir()
         source_path = self.source_dir / sub_id
         with source_path.open("wb") as f:

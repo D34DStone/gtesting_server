@@ -11,7 +11,8 @@ import requests
 from aiohttp import web, ClientSession, FormData
 from marshmallow import ValidationError
 
-from src import main
+from src.routes import routes
+from src.application import create_app
 from src.schemas import *
 from src.runner import TestResult
 
@@ -21,9 +22,7 @@ class IntgrationTest(unittest.IsolatedAsyncioTestCase):
     HOST = "localhost:8080"
 
     async def asyncSetUp(self):
-        os.environ["APP_CONFIG"] = "config:TestingConfig"
-        self.app = main.get_app([])
-        self.config = main.get_config([])
+        self.app = create_app(routes, ["--config", "config:TestingConfig"])
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, *self.HOST.split(":"))

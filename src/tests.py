@@ -5,7 +5,7 @@ from dataclasses import dataclass, asdict, field
 
 from marshmallow_dataclass import class_schema
 
-from .application import config
+from .application import config_ctx
 
 @dataclass
 class Test:
@@ -22,7 +22,7 @@ class TestSet:
 
 
 def save_testset(ts: TestSet):
-    testsets_dir = config.get().TESTSETS_DIR
+    testsets_dir = config_ctx.get().TESTSETS_DIR
     if not testsets_dir.exists():
         testsets_dir.mkdir(parent=True)
     testset_path = testsets_dir / ts.id
@@ -36,7 +36,7 @@ class TestSetNotFound(Exception):
 
 
 def get_testset(id: str) -> TestSet:
-    testset_path = config.get().TESTSETS_DIR / id
+    testset_path = config_ctx.get().TESTSETS_DIR / id
     if not testset_path.exists():
         raise TestSetNotFound
     with testset_path.open("r") as f:
