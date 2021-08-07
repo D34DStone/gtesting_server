@@ -1,23 +1,19 @@
+import os
 import argparse
 import importlib
 from asyncio import coroutine
-from contextvars import ContextVar
 from contextlib import contextmanager
 
 from redis import Redis
 from aiohttp import web
 
-
-__all__ = ("config_ctx", "redis_ctx", "app_context", "create_app")
-
-
-config_ctx = ContextVar("gtesting:config")
-redis_ctx = ContextVar("gtesting:redis")
+from .context_vars import config_var, app_var
+from .tasks_pool import init_tasks_pool
 
 
 def set_app_context(app):
-    config_ctx.set(app["config"])
-    redis_ctx.set(app["redis"])
+    app_var.set(app)
+    config_var.set(app["config"])
 
 
 @contextmanager
@@ -48,14 +44,14 @@ def get_config(argv):
     return load_module("config:DevelopmentConfig")
 
 
-def create_app(routes, argv) -> web.Application:
+def create_app(argv, routes=[]) -> web.Application:
     config = get_config(argv)
-    redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
     app = web.Application()
-
     app.add_routes(routes)
     app["config"] = config
-    app["redis"] = redis
+    app["global"] = dict()
+
+    init_tasks_pool(app)
 
     async def on_startup(app):
         set_app_context(app)
