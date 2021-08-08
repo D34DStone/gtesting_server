@@ -7,6 +7,7 @@ from marshmallow_dataclass import class_schema
 
 from aiohttp import web, ClientSession
 
+from src.utils import print_report
 from src.schemas import *
 from src.routes import routes
 from src.application import create_app
@@ -73,6 +74,7 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
         self.submition_states[submition_id] = report
         return web.Response(status=200)
 
+    
     async def test_integration(self):
         with ASSETS.TESTSET.open("r") as f:
             testset = json.load(f)
@@ -116,3 +118,4 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(report.status, Status.Finished)
         self.assertEqual(len(report.test_results), len(testset["tests"]))
         self.assertTrue(all(test.verdict == TestResult.Verdict.OK for test in report.test_results))
+        print_report(report)
