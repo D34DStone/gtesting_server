@@ -8,10 +8,10 @@ from .schemas import *
 from .tests import TestSet, save_testset, get_testset
 
 from .application import config_var, tasks_pool
-from .v2.tester import Tester
-from .v2.testing_strategy import TestingStrategy
-from .v2.python3_fs_strategy import Python3FSTestingStrategy
-from .v2.testset import Test
+from .tester import Tester
+from .testing_strategy import TestingStrategy
+from .python3_fs_strategy import Python3FSTestingStrategy
+from .testset import Test
 
 
 routes = web.RouteTableDef()
@@ -59,7 +59,7 @@ def get_strategy(language: str, ts: TestSet) -> Union[TestingStrategy, None]:
 
 
 @routes.post("/submit")
-@json_api(SubmitReqSchema(), V2.SubmitRespSchema())
+@json_api(SubmitReqSchema(), SubmitRespSchema())
 async def submit(request):
     if not (testset := get_testset(request["testset_id"])):
         return web.Response(status=404, text="Test set not found.")

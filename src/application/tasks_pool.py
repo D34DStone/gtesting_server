@@ -9,6 +9,9 @@ import aiohttp.web
 from .context_vars import app_var
 
 
+__all__ = ("init_tasks_pool", "get", "schedult")
+
+
 async def __cleanup(app: aiohttp.web.Application):
     if "tasks_pool" not in app["global"].keys():
         return
@@ -23,7 +26,7 @@ async def __cleanup(app: aiohttp.web.Application):
 
 def init_tasks_pool(app: aiohttp.web.Application):
     app["global"]["tasks_pool"] = list()
-    app.on_cleanup.append(__cleanup)
+    app["custom_cleanups"].append(__cleanup)
 
 
 def __get_tasks_pool():

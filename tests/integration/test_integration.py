@@ -11,8 +11,9 @@ from src.utils import print_report
 from src.schemas import *
 from src.routes import routes
 from src.application import create_app
-from src.v2.tester import Report, Status
-from src.v2.testing_strategy import TestResult
+from src.tester import Report, Status
+from src.testing_strategy import TestResult
+from src.application.tasks_pool import init_tasks_pool
 
 class SERVER:
     PROT = "http"
@@ -43,6 +44,7 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
 
     async def __run_server(self):
         app = create_app(["--config", "config:TestingConfig"], routes)
+        init_tasks_pool(app)
         self.server_runner = web.AppRunner(app)
         await self.server_runner.setup()
         site = web.TCPSite(self.server_runner, SERVER.HOST, SERVER.PORT)
@@ -98,7 +100,7 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
             async with s.post(f"{SERVER.URL}/submit", json=submition) as resp:
                 self.assertEqual(resp.status, 200)
                 resp_obj = await resp.json()
-                submition_id = V2.SubmitRespSchema().load(resp_obj)["id"]
+                submition_id = SubmitRespSchema().load(resp_obj)["id"]
 
 
         subscription = {

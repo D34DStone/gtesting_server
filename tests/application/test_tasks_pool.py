@@ -26,15 +26,20 @@ class MockApp():
 
     g: Dict
     on_cleanup: List[Callable]
+    custom_cleanups: List
 
     def __init__(self):
         self.g = dict()
         self.on_cleanup = list()
+        self.custom_cleanups = list()
+        tasks_pool.init_tasks_pool(self)
 
     def __getitem__(self, key):
-        if key != "global":
-            raise RuntimeError
-        return self.g
+        if key == "global":
+            return self.g
+        if key == "custom_cleanups":
+            return self.custom_cleanups
+        raise RuntimeError()
 
 
 class TesterPoolTests(unittest.IsolatedAsyncioTestCase):

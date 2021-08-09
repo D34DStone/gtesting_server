@@ -1,5 +1,5 @@
-from src.v2.tester import Report, Status
-from src.v2.testing_strategy import TestResult
+from src.tester import Report, Status
+from src.testing_strategy import TestResult
 
 
 def print_report(report: Report):

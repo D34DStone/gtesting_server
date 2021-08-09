@@ -7,6 +7,7 @@ from aiohttp import web, ClientSession
 from src.schemas import *
 from src.routes import routes
 from src.application import create_app
+from src.application.tasks_pool import init_tasks_pool
 
 
 PROT = "http"
@@ -22,6 +23,7 @@ class RoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         self.app = create_app(["--config", "config:TestingConfig"], routes)
+        init_tasks_pool(self.app)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, HOST, PORT)
@@ -106,7 +108,7 @@ class RoutesTest(unittest.IsolatedAsyncioTestCase):
             async with s.post(f"{URL}/submit", json=submition) as resp:
                 self.assertEqual(resp.status, 200)
                 resp_obj = await resp.json()
-                if errs := V2.SubmitRespSchema().validate(resp_obj):
+                if errs := SubmitRespSchema().validate(resp_obj):
                     self.fail(f"Wrong response: {errs}")
 
     async def test_submit_wrong_testet(self):

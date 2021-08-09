@@ -8,7 +8,6 @@ from redis import Redis
 from aiohttp import web
 
 from .context_vars import config_var, app_var
-from .tasks_pool import init_tasks_pool
 
 
 def set_app_context(app):
@@ -44,14 +43,18 @@ def get_config(argv):
     return load_module("config:DevelopmentConfig")
 
 
+def on_cleanup_custom(app: web.Application):
+    for cleanup_cb in app["custom_cleanups"]:
+        cleanup_cb(app)
+
+
 def create_app(argv, routes=[]) -> web.Application:
     config = get_config(argv)
     app = web.Application()
     app.add_routes(routes)
     app["config"] = config
     app["global"] = dict()
-
-    init_tasks_pool(app)
+    app["custom_cleanups"] = list()
 
     async def on_startup(app):
         set_app_context(app)

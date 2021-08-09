@@ -17,11 +17,9 @@ class SubmitReqSchema(Schema):
     source = fields.Str()
 
 
-class V2:
+class SubmitRespSchema(Schema):
 
-    class SubmitRespSchema(Schema):
-
-        id = fields.Str()
+    id = fields.Str()
 
 
 class SubcribeReqSchema(Schema):
