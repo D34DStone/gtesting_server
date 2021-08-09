@@ -3,11 +3,14 @@ import argparse
 import importlib
 from asyncio import coroutine
 from contextlib import contextmanager
+from contextvars import ContextVar
 
 from redis import Redis
 from aiohttp import web
 
-from .context_vars import config_var, app_var
+
+app_var = ContextVar("gtesting:app")
+config_var = ContextVar("gtesting:config")
 
 
 def set_app_context(app):
@@ -17,8 +20,13 @@ def set_app_context(app):
 
 @contextmanager
 def app_context(app):
-    set_app_context(app)
-    yield
+    t_app = app_var.set(app)
+    t_config = config_var.set(app["config"])
+    try:
+        yield
+    finally:
+        app_var.reset(t_app)
+        config_var.reset(t_config)
 
 
 def load_module(path: str):
@@ -54,6 +62,7 @@ def create_app(argv, routes=[]) -> web.Application:
     app.add_routes(routes)
     app["config"] = config
     app["global"] = dict()
+    app["modules"] = list()
     app["custom_cleanups"] = list()
 
     async def on_startup(app):

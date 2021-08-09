@@ -6,10 +6,10 @@ from typing import Callable, TypeVar
 
 import aiohttp.web
 
-from .context_vars import app_var
+from src.application import app_var
 
 
-__all__ = ("init_tasks_pool", "get", "schedult")
+__all__ = ("init_app", "get", "schedult")
 
 
 async def __cleanup(app: aiohttp.web.Application):
@@ -24,16 +24,16 @@ async def __cleanup(app: aiohttp.web.Application):
             logging.info(f"Task of {runner} is cancelled.")
 
 
-def init_tasks_pool(app: aiohttp.web.Application):
+def init_app(app: aiohttp.web.Application):
     app["global"]["tasks_pool"] = list()
     app["custom_cleanups"].append(__cleanup)
+    app["modules"].append("tasks_pool")
 
 
 def __get_tasks_pool():
     assert app_var in copy_context(), "Not inside an app context"
     app = app_var.get()
-    assert "tasks_pool" in app["global"].keys(), \
-           "tasks_pool hasn't been initialized."
+    assert "tasks_pool" in app["modules"], "tasks_pool module wans't loaded"
     return app["global"]["tasks_pool"]
 
 

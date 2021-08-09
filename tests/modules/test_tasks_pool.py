@@ -4,7 +4,11 @@ import unittest
 from contextlib import contextmanager
 from typing import Dict, List, Callable
 
-from src.application import tasks_pool, app_var
+from aiohttp import web
+
+from src.application import create_app, app_var
+from src.modules import tasks_pool
+
 
 class MockRunner():
 
@@ -22,30 +26,11 @@ def get_runner(id: str) -> Callable[MockRunner, bool]:
     return lambda r: r.id == id
 
 
-class MockApp():
-
-    g: Dict
-    on_cleanup: List[Callable]
-    custom_cleanups: List
-
-    def __init__(self):
-        self.g = dict()
-        self.on_cleanup = list()
-        self.custom_cleanups = list()
-        tasks_pool.init_tasks_pool(self)
-
-    def __getitem__(self, key):
-        if key == "global":
-            return self.g
-        if key == "custom_cleanups":
-            return self.custom_cleanups
-        raise RuntimeError()
-
 
 class TesterPoolTests(unittest.IsolatedAsyncioTestCase):
 
     runner: MockRunner
-    epp: MockApp
+    app: web.Application
 
     @contextmanager
     def __app_context(self):
@@ -54,8 +39,8 @@ class TesterPoolTests(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.runner = MockRunner()
-        self.app = MockApp()
-        tasks_pool.init_tasks_pool(self.app)
+        self.app = create_app(["--config", "config:TestingConfig"])
+        tasks_pool.init_app(self.app)
 
     def test_no_app(self):
         with self.assertRaises(AssertionError):
