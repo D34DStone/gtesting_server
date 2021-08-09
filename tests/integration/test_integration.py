@@ -13,7 +13,8 @@ from src.routes import routes
 from src.application import create_app
 from src.tester import Report, Status
 from src.testing_strategy import TestResult
-from src.application.tasks_pool import init_tasks_pool
+from src.modules import tasks_pool
+
 
 class SERVER:
     PROT = "http"
@@ -44,7 +45,7 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
 
     async def __run_server(self):
         app = create_app(["--config", "config:TestingConfig"], routes)
-        init_tasks_pool(app)
+        tasks_pool.init_app(app)
         self.server_runner = web.AppRunner(app)
         await self.server_runner.setup()
         site = web.TCPSite(self.server_runner, SERVER.HOST, SERVER.PORT)

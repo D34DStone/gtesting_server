@@ -7,7 +7,8 @@ from marshmallow import ValidationError
 from .schemas import *
 from .tests import TestSet, save_testset, get_testset
 
-from .application import config_var, tasks_pool
+from .modules import tasks_pool
+from .application import config_var
 from .tester import Tester
 from .testing_strategy import TestingStrategy
 from .python3_fs_strategy import Python3FSTestingStrategy
