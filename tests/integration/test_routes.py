@@ -7,7 +7,7 @@ from aiohttp import web, ClientSession
 from src.schemas import *
 from src.routes import routes
 from src.application import create_app
-from src.modules import tasks_pool
+from src.modules import tasks_pool, redis_client
 
 
 PROT = "http"
@@ -24,6 +24,7 @@ class RoutesTest(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.app = create_app(["--config", "config:TestingConfig"], routes)
         tasks_pool.init_app(self.app)
+        redis_client.init_app(self.app)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, HOST, PORT)
@@ -94,7 +95,7 @@ class RoutesTest(unittest.IsolatedAsyncioTestCase):
             async with s.post(f"{URL}/testset", json=testset) as resp:
                 self.assertEqual(resp.status, 200)
                 resp_obj = await resp.json()
-                testset_id = TestSetSchema().load(resp_obj).id
+                testset_id = TestSetSchema().load(resp_obj)._id
 
         source = ( 
             "a, b, *_ = (int(s) for s in input().split())\n"

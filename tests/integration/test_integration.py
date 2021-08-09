@@ -13,7 +13,7 @@ from src.routes import routes
 from src.application import create_app
 from src.tester import Report, Status
 from src.testing_strategy import TestResult
-from src.modules import tasks_pool
+from src.modules import tasks_pool, redis_client
 
 
 class SERVER:
@@ -46,6 +46,7 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
     async def __run_server(self):
         app = create_app(["--config", "config:TestingConfig"], routes)
         tasks_pool.init_app(app)
+        redis_client.init_app(app)
         self.server_runner = web.AppRunner(app)
         await self.server_runner.setup()
         site = web.TCPSite(self.server_runner, SERVER.HOST, SERVER.PORT)
@@ -86,7 +87,7 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
             async with s.post(f"{SERVER.URL}/testset", json=testset) as resp:
                 self.assertEqual(resp.status, 200)
                 resp_obj = await resp.json()
-                testset_id = TestSetSchema().load(resp_obj).id 
+                testset_id = TestSetSchema().load(resp_obj)._id 
 
         with ASSETS.SOURCE.open("r") as f:
             source = f.read()
@@ -121,4 +122,3 @@ class IntegrationTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(report.status, Status.Finished)
         self.assertEqual(len(report.test_results), len(testset["tests"]))
         self.assertTrue(all(test.verdict == TestResult.Verdict.OK for test in report.test_results))
-        print_report(report)

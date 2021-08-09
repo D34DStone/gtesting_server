@@ -4,7 +4,7 @@ from typing import Tuple
 from marshmallow_dataclass import class_schema
 from marshmallow import Schema, fields
 
-from .tests import Test, TestSet
+from .testset import Test, TestSet
 
 
 TestSetSchema = class_schema(TestSet, Schema)

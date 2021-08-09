@@ -5,14 +5,14 @@ from aiohttp import web
 from marshmallow import ValidationError
 
 from .schemas import *
-from .tests import TestSet, save_testset, get_testset
 
 from .modules import tasks_pool
 from .application import config_var
 from .tester import Tester
 from .testing_strategy import TestingStrategy
 from .python3_fs_strategy import Python3FSTestingStrategy
-from .testset import Test
+from . import testset
+from .testset import TestSet
 
 
 routes = web.RouteTableDef()
@@ -44,14 +44,6 @@ def json_api(req_schema, resp_schema):
     return wrapper
 
 
-@routes.post("/testset")
-@json_api(TestSetSchema(exclude=("id",)), TestSetSchema())
-async def testset(request):
-    ts = TestSet(**request)
-    save_testset(ts)
-    return ts
-
-
 def get_strategy(language: str, ts: TestSet) -> Union[TestingStrategy, None]:
     execution_dir = config_var.get().RUNNERS_DIR
     if language == "python3":
@@ -59,15 +51,23 @@ def get_strategy(language: str, ts: TestSet) -> Union[TestingStrategy, None]:
     return None
 
 
+@routes.post("/testset")
+@json_api(TestSetSchema(exclude=("_id",)), TestSetSchema())
+async def testset_handler(request):
+    ts = TestSet(**request)
+    testset.save(ts)
+    return ts
+
+
 @routes.post("/submit")
 @json_api(SubmitReqSchema(), SubmitRespSchema())
 async def submit(request):
-    if not (testset := get_testset(request["testset_id"])):
+    if not (ts := testset.load(request["testset_id"])):
         return web.Response(status=404, text="Test set not found.")
-    if not (strategy := get_strategy(request["language"], testset)):
+    if not (strategy := get_strategy(request["language"], ts)):
         return web.Response(status=500, 
                 text="Couldn't find a testing strategy.")
-    tester = Tester(strategy, request["source"], testset.tests)
+    tester = Tester(strategy, request["source"], ts.tests)
     tasks_pool.schedult(tester)
     return { "id": tester.id }
 
