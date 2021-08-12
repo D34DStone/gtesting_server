@@ -59,6 +59,11 @@ async def testset_handler(request):
     return ts
 
 
+def format_url_template(template: str, **kwargs) -> str:
+    for (key, value) in kwargs.items():
+        template = template.replace(f"${key}", value)
+    return template
+
 @routes.post("/submit")
 @json_api(SubmitReqSchema(), SubmitRespSchema())
 async def submit(request):
@@ -67,9 +72,12 @@ async def submit(request):
     if not (strategy := get_strategy(request["language"], ts)):
         return web.Response(status=500, 
                 text="Couldn't find a testing strategy.")
-    tester = Tester(strategy, request["source"], ts.tests)
-    tasks_pool.schedult(tester)
-    return { "id": tester.id }
+    submition = Tester(strategy, request["source"], ts.tests)
+    if template := request.get("callback_url_template"):
+        callback_url = format_url_template(template, submition_id=submition._id)
+        await submition.subscribe(callback_url)
+    tasks_pool.schedult(submition)
+    return { "id": submition.id }
 
 
 @routes.post("/subscribe")

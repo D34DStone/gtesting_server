@@ -15,6 +15,7 @@ class SubmitReqSchema(Schema):
     testset_id = fields.Str()
     language = fields.Str()
     source = fields.Str()
+    callback_url_template = fields.Str(required=False)
 
 
 class SubmitRespSchema(Schema):
